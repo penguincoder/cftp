@@ -1,0 +1,13 @@
+CFTP - a simple in-band file transfer application protocol experiment
+Andrew Coleman
+CSC-4200
+
+To compile:
+  gcc -o cftp -Wall server.c client.c cftp.c
+
+For explanation on running:
+  ./cftp -h
+
+There is only one binary, with a switch for the server. All other options are
+common and will work for either server or client.
+
