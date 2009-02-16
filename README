@@ -11,3 +11,5 @@ For explanation on running:
 There is only one binary, with a switch for the server. All other options are
 common and will work for either server or client.
 
+Multi-client capable. Not necessarily single user.
+
