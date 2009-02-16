@@ -112,9 +112,16 @@ void run_client(const char *address, int portnum)
         }
       }
       cdebug(msg);
-      memset(msg, '\0', MSGLEN);
       close(skt);
     }
+    else if(strlen(msg) > 0 && !strcmp(msg, "help"))
+    {
+      cdebug("Available commands:");
+      cdebug(" * ping - returns an unix timestamp from the server");
+      cdebug(" * get:filename - gets a file, if possible");
+      cdebug(" * put:filename - sends a file, if possible");
+    }
+    memset(msg, '\0', MSGLEN);
     printf("> ");
     scanf("%s", msg);
   } while(strcmp(msg, "quit") != 0);
