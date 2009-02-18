@@ -103,10 +103,22 @@ void send_file(int skt, const char *filename)
   /* send number of segments and file size to the other size cmd:arg style */
   sprintf(msg, "%d:%d", segments, fsize);
   /* do not expect a response, only data after this */
-  send(skt, msg, strlen(msg), 0);
+  if(send(skt, msg, strlen(msg), 0) < 0)
+  {
+    sprintf(errmsg, "Failed to send the number of segments: %s", strerror(errno));
+    error(errmsg);
+    return;
+  }
   
-  /* now read in the file, MSGLEN at a time and send the chunk to the host */
+  /* open file or die */
   infile = fopen(filename, "r");
+  if(infile == NULL)
+  {
+    sprintf(errmsg, "File could not be read: %s", strerror(errno));
+    error(errmsg);
+    return;
+  }
+  /* now read in the file, MSGLEN at a time and send the chunk to the host */
   for(cur_segment = 0; cur_segment < segments; cur_segment++)
   {
     fread(msg, MSGLEN, 1, infile);
@@ -114,6 +126,7 @@ void send_file(int skt, const char *filename)
     printf(errmsg);
     send_message(skt, msg);
   }
+  fclose(infile);
   debug("Filesystem", "File sent successfully");
 }
 
