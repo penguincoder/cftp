@@ -7,7 +7,6 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <libgen.h>
-#include <math.h>
 
 #include "cftp.h"
 #include "filesystem.h"
@@ -57,7 +56,7 @@ void send_file(int skt, const char *filename)
   memset(errmsg, '\0', ERRMSGLEN);
   memset(cmd, '\0', CMDLEN);
   memset(arg, '\0', MSGLEN);
-  memset(msg, (unsigned char)0, MSGLEN);
+  memset(msg, '\0', MSGLEN);
   
   /* file must exist */
   if(!exist(filename))
@@ -73,7 +72,7 @@ void send_file(int skt, const char *filename)
     error("That file is inappropriately sized!");
     return;
   }
-  segments = ceil(MAXFILE / MSGLEN);
+  segments = MAXFILE / MSGLEN;
   
   /* make a copy then figure out just the filename */
   strcpy(msg, filename);
@@ -94,7 +93,7 @@ void send_file(int skt, const char *filename)
     error(errmsg);
     return;
   }
-  else if(strcmp(cmd, "cts") != 0)
+  else if(strcmp(cmd, "cts"))
   {
     sprintf(errmsg, "ERROR invalid reponse from remote: %s", msg);
     error(errmsg);
@@ -111,10 +110,11 @@ void send_file(int skt, const char *filename)
   for(cur_segment = 0; cur_segment < segments; cur_segment++)
   {
     fread(msg, MSGLEN, 1, infile);
-    sprintf(errmsg, "\rSending File: %.2f%%", floor(cur_segment / segments * 100.0));
-    debug("Filesystem", errmsg);
+    sprintf(errmsg, "\rFilesystem: Sending file %.2f%%", (cur_segment / segments * 100.0));
+    printf(errmsg);
     send_message(skt, msg);
   }
+  debug("Filesystem", "File sent successfully");
 }
 
 /*

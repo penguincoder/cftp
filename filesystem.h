@@ -11,7 +11,7 @@
 
 /*
  * The MAXFILE size is calculated to be the largest integer in CMDLEN - 1
- * characters times MSGLEN.
+ * characters times MSGLEN. MAXFILE must be a multiple of MSGLEN.
  *
  * 9999 * 128 bytes = 1279872 bytes maximum
  *
