@@ -3,7 +3,7 @@ Andrew Coleman
 CSC-4200
 
 To compile:
-  gcc -o cftp -Wall server.c client.c cftp.c
+  gcc -o cftp -lm -Wall server.c client.c filesystem.c cftp.c
 
 For explanation on running:
   ./cftp -h
