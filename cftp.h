@@ -13,6 +13,7 @@ int validate_command(const char *);
 void split_command(char *, char *, char *);
 void error(const char *);
 void debug(const char *, const char *);
+void send_message(int, char *);
 
 #endif
 

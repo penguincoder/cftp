@@ -11,6 +11,8 @@
 #include <string.h>
 #include <strings.h>
 #include <unistd.h>
+#include <errno.h>
+#include <sys/socket.h>
 
 #include "cftp.h"
 #include "server.h"
@@ -90,6 +92,30 @@ void error(const char *msg)
 void debug(const char *prefix, const char *msg)
 {
   printf("%s: %s\n", prefix, msg);
+}
+
+/*
+ * Sends a message to the socket. Pass in the socket and message. Expects msg
+ * to be already validated by validate_command first! Formats response into
+ * string buffer given. Works for client or server, so long as you expect a
+ * response message from the other side.
+ *
+ */
+void send_message(int skt, char *msg)
+{
+  char errmsg[ERRMSGLEN];
+  memset(errmsg, '\0', ERRMSGLEN);
+
+  if(send(skt, msg, strlen(msg), 0) < 0)
+  {
+    sprintf(errmsg, "Send Error: %s", strerror(errno));
+    error(errmsg);
+  }
+  else if(recv(skt, msg, MSGLEN, 0) < 0)
+  {
+    sprintf(errmsg, "Receive Error: %s", strerror(errno));
+    error(errmsg);
+  }
 }
 
 /*
