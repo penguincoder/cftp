@@ -11,6 +11,7 @@
 
 #include "cftp.h"
 #include "client.h"
+#include "filesystem.h"
 
 /*
  * Special client debug wrapper.
@@ -67,51 +68,13 @@ int connect_to_server(const char *address, int portnum)
 }
 
 /*
- * Sends a message to the socket. Pass in the socket and message. Expects msg
- * to be already validated by validate_command first! Formats response into
- * string buffer given.
- *
- */
-void send_message(int skt, char *msg)
-{
-  char command[CMDLEN], argument[MSGLEN], errmsg[ERRMSGLEN];
-  memset(command, '\0', CMDLEN);
-  memset(argument, '\0', MSGLEN);
-  memset(errmsg, '\0', ERRMSGLEN);
-  
-  if(send(skt, msg, strlen(msg), 0) < 0)
-  {
-    sprintf(errmsg, "Send Error: %s", strerror(errno));
-    error(errmsg);
-  }
-  else if(recv(skt, msg, MSGLEN, 0) < 0)
-  {
-    sprintf(errmsg, "Receive Error: %s", strerror(errno));
-    error(errmsg);
-  }
-  else
-  {
-    split_command(msg, command, argument);
-    if(strlen(argument) > 0)
-    {
-      sprintf(errmsg, "Response: %s: %s", command, argument);
-    }
-    else
-    {
-      sprintf(errmsg, "Response: %s", command);
-    }
-    cdebug(errmsg);
-  }
-}
-
-/*
  * Runs the command processor to the server. Handles commands and responses.
  *
  */
 void run_client(const char *address, int portnum)
 {
   int skt;
-  char msg[MSGLEN];
+  char msg[MSGLEN], cmd[CMDLEN], argument[MSGLEN];
   memset(msg, '\0', MSGLEN);
   
   /* simple informational header */
@@ -124,7 +87,16 @@ void run_client(const char *address, int portnum)
     if(strlen(msg) > 0 && validate_command(msg))
     {
       skt = connect_to_server(address, portnum);
-      send_message(skt, msg);
+      split_command(msg, cmd, argument);
+      if(!strcmp(cmd, "put"))
+      {
+        send_file(skt, argument);
+      }
+      else
+      {
+        send_message(skt, msg);
+        cdebug(msg);
+      }
       close(skt);
     }
     else if(strlen(msg) > 0 && !strcmp(msg, "help"))
