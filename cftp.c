@@ -54,7 +54,7 @@ void split_command(char *buffer, char *command, char *argument)
   memset(argument, '\0', MSGLEN);
   
   /* find everything up to the colon delimiter */
-  while(buffer[c] != '\0' && buffer[c] != ':')
+  while(buffer[c] != '\0' && buffer[c] != ':' && c < CMDLEN && d < CMDLEN)
   {
     command[d++] = buffer[c++];
   }
@@ -65,7 +65,7 @@ void split_command(char *buffer, char *command, char *argument)
     d = 0;
   }
   /* copy argument, if found */
-  while(buffer[c] != '\0')
+  while(buffer[c] != '\0' && c < MSGLEN && d < MSGLEN)
   {
     argument[d++] = buffer[c++];
   }

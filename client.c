@@ -67,19 +67,54 @@ int connect_to_server(const char *address, int portnum)
 }
 
 /*
+ * Sends a message to the socket. Pass in the socket and message. Expects msg
+ * to be already validated by validate_command first! Formats response into
+ * string buffer given.
+ *
+ */
+void send_message(int skt, char *msg)
+{
+  char command[CMDLEN], argument[MSGLEN], errmsg[ERRMSGLEN];
+  memset(command, '\0', CMDLEN);
+  memset(argument, '\0', MSGLEN);
+  memset(errmsg, '\0', ERRMSGLEN);
+  
+  if(send(skt, msg, strlen(msg), 0) < 0)
+  {
+    sprintf(errmsg, "Send Error: %s", strerror(errno));
+    error(errmsg);
+  }
+  else if(recv(skt, msg, MSGLEN, 0) < 0)
+  {
+    sprintf(errmsg, "Receive Error: %s", strerror(errno));
+    error(errmsg);
+  }
+  else
+  {
+    split_command(msg, command, argument);
+    if(strlen(argument) > 0)
+    {
+      sprintf(errmsg, "Response: %s: %s", command, argument);
+    }
+    else
+    {
+      sprintf(errmsg, "Response: %s", command);
+    }
+    cdebug(errmsg);
+  }
+}
+
+/*
  * Runs the command processor to the server. Handles commands and responses.
  *
  */
 void run_client(const char *address, int portnum)
 {
   int skt;
-  char msg[MSGLEN], command[CMDLEN], argument[MSGLEN];
-  
-  /* clear strings */
+  char msg[MSGLEN];
   memset(msg, '\0', MSGLEN);
-  memset(command, '\0', MSGLEN);
-  memset(argument, '\0', MSGLEN);
   
+  /* simple informational header */
   sprintf(msg, "Using Server: %s:%d", address, portnum);
   cdebug(msg);
   memset(msg, '\0', MSGLEN);
@@ -89,33 +124,13 @@ void run_client(const char *address, int portnum)
     if(strlen(msg) > 0 && validate_command(msg))
     {
       skt = connect_to_server(address, portnum);
-      if(send(skt, msg, strlen(msg), 0) < 0)
-      {
-        sprintf(msg, "Send Error: %s", strerror(errno));
-        error(msg);
-      }
-      else if(recv(skt, msg, MSGLEN, 0) < 0)
-      {
-        sprintf(msg, "Receive Error: %s", strerror(errno));
-        error(msg);
-      }
-      else
-      {
-        split_command(msg, command, argument);
-        if(strlen(argument) > 0)
-        {
-          sprintf(msg, "Server Said: %s: %s", command, argument);
-        }
-        else
-        {
-          sprintf(msg, "Server Said: %s", command);
-        }
-      }
-      cdebug(msg);
+      send_message(skt, msg);
       close(skt);
     }
     else if(strlen(msg) > 0 && !strcmp(msg, "help"))
     {
+      sprintf(msg, "Using Server: %s:%d", address, portnum);
+      cdebug(msg);
       cdebug("Available commands:");
       cdebug(" * ping - returns an unix timestamp from the server");
       cdebug(" * get:filename - gets a file, if possible");

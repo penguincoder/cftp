@@ -22,40 +22,52 @@ void sdebug(const char *msg)
 }
 
 /*
+ * Handles each command received from the server. Expects that the message has
+ * been validated by validate_command first! Takes one parameter, the message
+ * from the client. The response is stored in the same buffer for return.
+ *
+ */
+void server_command(char *msg)
+{
+  char command[CMDLEN], argument[MSGLEN];
+  time_t pong;
+  memset(command, '\0', CMDLEN);
+  memset(argument, '\0', MSGLEN);
+  
+  /* get individual command and argument for processing */
+  split_command(msg, command, argument);
+  
+  /* now check each command and perform the expected results */
+  if(!strcmp(command, "ping"))
+  {
+    pong = time(NULL);
+    sprintf(msg, "Pong:%llud", (uintmax_t)pong);
+  }
+}
+
+/*
  * Proccesses a client connection and performs the necessary command. Called
  * on each connection from a client.
  *
  */
 void handle_client(int skt, const char *clientip)
 {
-  char buffer[MSGLEN], msg[ERRMSGLEN], command[CMDLEN], argument[MSGLEN];
-  time_t pong;
+  char buffer[MSGLEN], msg[ERRMSGLEN];
   memset(buffer, '\0', MSGLEN);
   memset(msg, '\0', ERRMSGLEN);
-  memset(command, '\0', CMDLEN);
-  memset(argument, '\0', MSGLEN);
   
   /* figure out what to do */
   if(recv(skt, buffer, MSGLEN, 0) >= 0 && validate_command(buffer))
   {
-    split_command(buffer, command, argument);
-    if(!strcmp(command, "ping"))
-    {
-      pong = time(NULL);
-      sprintf(buffer, "Pong:%llud", (uintmax_t)pong);
-    }
+    server_command(buffer);
+  }
+  else if(errno)
+  {
+    sprintf(buffer, "ERR:%s", strerror(errno));
   }
   else
   {
-    if(errno)
-    {
-      sprintf(buffer, "ERR:%s", strerror(errno));
-    }
-    else
-    {
-      sprintf(buffer, "ERR:Invalid Command");
-    }
-    error(buffer);
+    sprintf(buffer, "ERR:Invalid Command");
   }
   
   /* send message to client */
