@@ -11,6 +11,7 @@
 
 #include "cftp.h"
 #include "server.h"
+#include "filesystem.h"
 
 /*
  * Special server debug wrapper.
@@ -41,7 +42,7 @@ void server_command(char *msg)
   if(!strcmp(command, "ping"))
   {
     pong = time(NULL);
-    sprintf(msg, "Pong:%llud", (uintmax_t)pong);
+    sprintf(msg, "pong:%llud", (uintmax_t)pong);
   }
 }
 
@@ -63,11 +64,11 @@ void handle_client(int skt, const char *clientip)
   }
   else if(errno)
   {
-    sprintf(buffer, "ERR:%s", strerror(errno));
+    sprintf(buffer, "err:%s", strerror(errno));
   }
   else
   {
-    sprintf(buffer, "ERR:Invalid Command");
+    sprintf(buffer, "err:Invalid Command");
   }
   
   /* send message to client */
