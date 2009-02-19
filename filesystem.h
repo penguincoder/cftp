@@ -17,8 +17,8 @@
  *
  */
 #define MAXFILE 1279872
-void send_file(int, const char *);
-void receive_file(int, const char *);
+void send_file(int, const char *, int);
+void receive_file(int, const char *, int);
 
 #endif
 

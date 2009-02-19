@@ -88,14 +88,18 @@ void run_client(const char *address, int portnum)
     {
       skt = connect_to_server(address, portnum);
       split_command(msg, cmd, argument);
-      if(!strcmp(cmd, "put"))
+      send_message(skt, msg);
+      /* response message from server, now in msg */
+      cdebug(msg);
+      /* send file to server */
+      if(!strcmp(cmd, "put") && !strncmp(msg, "cts", 3))
       {
-        send_file(skt, argument);
+        send_file(skt, argument, 0);
       }
-      else
+      /* get file from server */
+      else if(!strcmp(cmd, "get") && !strncmp(msg, "cts", 3))
       {
-        send_message(skt, msg);
-        cdebug(msg);
+        receive_file(skt, argument, 0);
       }
       close(skt);
     }
@@ -111,7 +115,7 @@ void run_client(const char *address, int portnum)
     memset(msg, '\0', MSGLEN);
     printf("> ");
     scanf("%s", msg);
-  } while(strcmp(msg, "quit") != 0);
+  } while(strcmp(msg, "quit"));
   
   /* cleanup and quit */
   cdebug("Bye!");

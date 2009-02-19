@@ -28,15 +28,15 @@ int validate_command(const char *msg)
   char errmsg[ERRMSGLEN];
   
   /* GET file command */
-  if(!strcmp(msg, "get"))
+  if(!strncmp(msg, "get", 3))
     return 1;
   
   /* PUT file command */
-  if(!strcmp(msg, "put"))
+  if(!strncmp(msg, "put", 3))
     return 1;
   
   /* PING send back the time stamp of right now */
-  if(!strcmp(msg, "ping"))
+  if(!strncmp(msg, "ping", 4))
     return 1;
   
   /* nothing else was found, so clearly this is not true */
@@ -49,7 +49,7 @@ int validate_command(const char *msg)
  * Splits a buffer into a command and argument.
  *
  */
-void split_command(char *buffer, char *command, char *argument)
+void split_command(const char *buffer, char *command, char *argument)
 {
   int c = 0, d = 0;
   memset(command, '\0', CMDLEN);
@@ -95,6 +95,43 @@ void debug(const char *prefix, const char *msg)
 }
 
 /*
+ * Wrapper to send a packet to a socket given a string. Handles errors and
+ * returns a bool based on success.
+ *
+ */
+int send_packet(int skt, const char *msg)
+{
+  char errmsg[ERRMSGLEN];
+  memset(errmsg, '\0', ERRMSGLEN);
+  if(send(skt, msg, strlen(msg), 0) < 0)
+  {
+    sprintf(errmsg, "Send Packet Error: %s", strerror(errno));
+    error(errmsg);
+    return 0;
+  }
+  return 1;
+}
+
+/*
+ * Wrapper to receive a packet from a socket and stores the result in a given
+ * buffer. Handles errors and returns a bool based on success.
+ *
+ */
+int receive_packet(int skt, char *msg)
+{
+  char errmsg[ERRMSGLEN];
+  memset(errmsg, '\0', ERRMSGLEN);
+  memset(msg, '\0', MSGLEN);
+  if(recv(skt, msg, MSGLEN, 0) < 0)
+  {
+    sprintf(errmsg, "Receive Packet Error: %s", strerror(errno));
+    error(errmsg);
+    return 0;
+  }
+  return 1;
+}
+
+/*
  * Sends a message to the socket. Pass in the socket and message. Expects msg
  * to be already validated by validate_command first! Formats response into
  * string buffer given. Works for client or server, so long as you expect a
@@ -103,18 +140,9 @@ void debug(const char *prefix, const char *msg)
  */
 void send_message(int skt, char *msg)
 {
-  char errmsg[ERRMSGLEN];
-  memset(errmsg, '\0', ERRMSGLEN);
-
-  if(send(skt, msg, strlen(msg), 0) < 0)
+  if(send_packet(skt, msg))
   {
-    sprintf(errmsg, "Send Error: %s", strerror(errno));
-    error(errmsg);
-  }
-  else if(recv(skt, msg, MSGLEN, 0) < 0)
-  {
-    sprintf(errmsg, "Receive Error: %s", strerror(errno));
-    error(errmsg);
+    receive_packet(skt, msg);
   }
 }
 

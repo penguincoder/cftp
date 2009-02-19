@@ -28,21 +28,29 @@ void sdebug(const char *msg)
  * from the client. The response is stored in the same buffer for return.
  *
  */
-void server_command(char *msg)
+void server_command(int skt, char *msg)
 {
   char command[CMDLEN], argument[MSGLEN];
   time_t pong;
-  memset(command, '\0', CMDLEN);
-  memset(argument, '\0', MSGLEN);
   
   /* get individual command and argument for processing */
   split_command(msg, command, argument);
   
   /* now check each command and perform the expected results */
-  if(!strcmp(command, "ping"))
+  if(!strncmp(msg, "ping", 4))
   {
     pong = time(NULL);
     sprintf(msg, "pong:%llud", (uintmax_t)pong);
+  }
+  else if(!strncmp(msg, "put", 3))
+  {
+    memset(msg, '\0', MSGLEN);
+    receive_file(skt, argument, 1);
+  }
+  else if(!strncmp(msg, "get", 3))
+  {
+    memset(msg, '\0', MSGLEN);
+    send_file(skt, argument, 1);
   }
 }
 
@@ -58,14 +66,16 @@ void handle_client(int skt, const char *clientip)
   memset(msg, '\0', ERRMSGLEN);
   
   /* figure out what to do */
-  if(recv(skt, buffer, MSGLEN, 0) >= 0 && validate_command(buffer))
+  if(receive_packet(skt, buffer) && validate_command(buffer))
   {
-    server_command(buffer);
+    server_command(skt, buffer);
   }
+  /* epic fail */
   else if(errno)
   {
     sprintf(buffer, "err:%s", strerror(errno));
   }
+  /* regular fail */
   else
   {
     sprintf(buffer, "err:Invalid Command");
@@ -74,12 +84,10 @@ void handle_client(int skt, const char *clientip)
   /* send message to client */
   if(strlen(buffer) > 0)
   {
-    sprintf(msg, "%s: %s", clientip, buffer);
+    sprintf(msg, "Response to %s: %s", clientip, buffer);
     sdebug(msg);
-    send(skt, buffer, strlen(buffer), 0);
+    send_packet(skt, buffer);
   }
-  
-  /* cleanup */
   close(skt);
 }
 
